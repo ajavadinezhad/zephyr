@@ -49,16 +49,20 @@ jobs:
           name: zyrln-windows-amd64
           path: zyrln-windows-amd64.exe
 
-  release:
-    if: startsWith(github.ref, 'refs/tags/')
-    needs: [build-linux, build-windows]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: artifacts
-          merge-multiple: true
-
-      - name: Create Release
-        uses: soft
+release:
+  if: startsWith(github.ref, 'refs/tags/')
+  needs:
+    - build-linux
+    - build-windows
+  runs-on: ubuntu-latest
+  steps:
+    - uses: actions/download-artifact@v4
+      with:
+        path: artifacts
+    - name: Create Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: artifacts/zyrln-*/zyrln-*
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
