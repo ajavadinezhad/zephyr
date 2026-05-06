@@ -21,8 +21,6 @@ import (
 	"sync"
 	"time"
   	"embed"
-
-	webview "github.com/webview/webview_go"
     "zyrln/relay/core"
 )
 
