@@ -141,20 +141,16 @@ func (p proxyConfig) dialContext(timeout time.Duration) func(context.Context, st
 }
 
 func main() {
-	// If double-clicked (no args and no controlling terminal), launch GUI
+	// Auto-launch GUI if double-clicked (no args and no controlling terminal)
 	if len(os.Args) == 1 {
-		// Try to open /dev/tty - fails if no controlling terminal (double-click)
-		tty, err := os.Open("/dev/tty")
-		if err != nil {
-			// No controlling terminal = likely double-clicked
+		if !isTerminal() {
 			fmt.Println("Launching GUI mode (double-clicked)...")
-			if err := runGUIMode(defaultGUIListen); err != nil {
+			if err := runGUIMode(defaultGUIListen, true); err != nil {
 				fmt.Fprintf(os.Stderr, "GUI mode failed: %v\n", err)
 				os.Exit(1)
 			}
 			return
 		}
-		tty.Close()
 	}
 
 	flag.Usage = func() {
@@ -198,11 +194,13 @@ Flags:
 	followRedirectsFlag := flag.Bool("follow-redirects", true, "follow HTTP redirects")
 	guiFlag := flag.Bool("gui", false, "start browser-based GUI (opens at http://gui-listen address)")
 	guiListenFlag := flag.String("gui-listen", defaultGUIListen, "listen address for -gui mode")
+	noBrowserFlag := flag.Bool("no-browser", false, "do not open the browser automatically in GUI mode")
 	flag.Parse()
 
 	// GUI mode
 	if *guiFlag {
-		if err := runGUIMode(*guiListenFlag); err != nil {
+		fmt.Printf("Launching GUI mode on %s...\n", *guiListenFlag)
+		if err := runGUIMode(*guiListenFlag, !*noBrowserFlag); err != nil {
 			fmt.Fprintf(os.Stderr, "GUI mode failed: %v\n", err)
 			os.Exit(1)
 		}
@@ -734,7 +732,7 @@ func openBrowser(url string) error {
 	return cmd.Start()
 }
 
-func runGUIMode(listenAddr string) error {
+func runGUIMode(listenAddr string, autoOpen bool) error {
 	mux := http.NewServeMux()
 
 	// guiFS is rooted at gui/ (due to //go:embed gui)
@@ -790,10 +788,21 @@ func runGUIMode(listenAddr string) error {
 			caExists = true
 		}
 
+		config := loadConfig("config.env")
+		appScriptURLs := core.ParseURLList(config["fronted-appscript-url"])
+		scripts := make([]map[string]any, 0, len(appScriptURLs))
+		for _, u := range appScriptURLs {
+			scripts = append(scripts, map[string]any{
+				"label": configLabel(u),
+				"id":    u,
+			})
+		}
+
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]any{
 			"proxy_running": proxyRunning,
 			"ca_exists":     caExists,
+			"scripts":       scripts,
 		})
 	})
 
@@ -866,7 +875,8 @@ func runGUIMode(listenAddr string) error {
 			},
 		}
 
-		srv, _, err := core.StartProxy(listen, []string{appScriptURL}, frontDomain, authKey, ca, guiClient, 12*time.Second)
+		appScriptURLs := core.ParseURLList(config["fronted-appscript-url"])
+		srv, _, err := core.StartProxy(listen, appScriptURLs, frontDomain, authKey, ca, guiClient, 12*time.Second)
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			json.NewEncoder(w).Encode(map[string]any{"success": false, "error": err.Error()})
@@ -959,7 +969,8 @@ func runGUIMode(listenAddr string) error {
 		}
 
 		client := core.NewHTTPClient(12 * time.Second)
-		resp, err := core.RelayRequest(client, appScriptURL, frontDomain, authKey, "GET", req.URL, map[string]string{"User-Agent": "zyrln/0.1"}, nil, 12*time.Second)
+		appScriptURLs := core.ParseURLList(config["fronted-appscript-url"])
+		resp, err := core.RelayRequestMulti(client, appScriptURLs, frontDomain, authKey, "GET", req.URL, map[string]string{"User-Agent": "zyrln/0.1"}, nil, 12*time.Second)
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			json.NewEncoder(w).Encode(map[string]any{"success": false, "error": err.Error()})
@@ -1096,4 +1107,43 @@ func loadConfig(path string) map[string]string {
 		}
 	}
 	return values
+}
+
+func isTerminal() bool {
+	stat, _ := os.Stdout.Stat()
+	return (stat.Mode() & os.ModeCharDevice) != 0
+}
+
+func configLabel(url string) string {
+	parts := strings.Split(url, ",")
+	first := ""
+	if len(parts) > 0 {
+		first = strings.TrimSpace(parts[0])
+	}
+	if first == "" {
+		return "Default"
+	}
+	id := ""
+	if idx := strings.Index(first, "/macros/s/"); idx != -1 {
+		id = first[idx+10:]
+		if end := strings.Index(id, "/"); end != -1 {
+			id = id[:end]
+		}
+	}
+	if len(id) >= 6 {
+		return wordLabel(id)
+	}
+	return strings.TrimPrefix(strings.TrimPrefix(first, "https://"), "http://")
+}
+
+func wordLabel(seed string) string {
+	adj := []string{"swift", "bold", "quiet", "bright", "pure", "sharp", "calm", "free"}
+	noun := []string{"relay", "bridge", "tunnel", "gate", "link", "path", "pass", "line"}
+	var h int64
+	for _, c := range seed {
+		h = h*31 + int64(c)
+	}
+	ai := int((h % int64(len(adj)) + int64(len(adj)))) % len(adj)
+	ni := int((h / int64(len(adj)) % int64(len(noun)) + int64(len(noun)))) % len(noun)
+	return strings.Title(adj[ai] + " " + noun[ni])
 }

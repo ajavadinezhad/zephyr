@@ -32,18 +32,39 @@
       </div>
 
       <div class="config-check" id="configCheck">
-        <h3>Configuration Check</h3>
+        <h3>System Check</h3>
         <div class="check-item" id="checkAppScript">
           <span class="check-icon">✗</span>
-          <span>Apps Script URL</span>
+          <span>Apps Script configured</span>
         </div>
         <div class="check-item" id="checkAuthKey">
           <span class="check-icon">✗</span>
-          <span>Auth Key</span>
+          <span>Auth Key valid</span>
         </div>
         <div class="check-item" id="checkCA">
           <span class="check-icon">✗</span>
-          <span>CA Certificate</span>
+          <span>CA Certificate installed</span>
+        </div>
+      </div>
+
+      <div class="scripts-section" id="scriptsSection" style="display:none;">
+        <h3>Active Configuration</h3>
+        <div id="scriptCard" class="script-card">
+          <div class="script-item-main">
+            <div id="scriptDot" class="script-dot"></div>
+            <div class="script-info">
+              <div id="scriptLabel" class="script-label">Loading...</div>
+              <div id="scriptSubtext" class="script-subtext"></div>
+            </div>
+            <button id="scriptInfoBtn" class="info-btn" title="View URLs">ⓘ</button>
+          </div>
+          <div id="urlListPopup" class="url-list-popup" style="display:none;">
+            <div class="popup-header">
+              <span>Connected URLs</span>
+              <button id="closePopup">×</button>
+            </div>
+            <div id="urlListContent" class="url-list-content"></div>
+          </div>
         </div>
       </div>
 
@@ -57,9 +78,9 @@
     <section class="tab-content" id="tab-config">
       <form id="configForm">
         <div class="form-group">
-          <label for="fronted-appscript-url">Apps Script URL</label>
-          <input type="url" id="fronted-appscript-url" name="fronted-appscript-url" placeholder="https://script.google.com/macros/s/...">
-          <span class="hint">Deployed Apps Script web app URL</span>
+          <label for="fronted-appscript-url">Apps Script URLs</label>
+          <textarea id="fronted-appscript-url" name="fronted-appscript-url" rows="3" placeholder="https://script.google.com/macros/s/...\n(separate multiple URLs with commas)"></textarea>
+          <span class="hint">Comma-separated list of deployed Apps Script web app URLs</span>
         </div>
 
         <div class="form-group">

@@ -71,6 +71,22 @@ document.addEventListener('DOMContentLoaded', () => {
     pollLogs();
     setInterval(pollLogs, 2000);
 
+    // Info button toggle
+    const infoBtn = document.getElementById('scriptInfoBtn');
+    const popup = document.getElementById('urlListPopup');
+    const closePopup = document.getElementById('closePopup');
+    if (infoBtn && popup) {
+      infoBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        popup.style.display = popup.style.display === 'none' ? 'block' : 'none';
+      });
+      document.addEventListener('click', () => { popup.style.display = 'none'; });
+      popup.addEventListener('click', (e) => e.stopPropagation());
+    }
+    if (closePopup && popup) {
+      closePopup.addEventListener('click', () => { popup.style.display = 'none'; });
+    }
+
     console.log('All event listeners set up');
   } catch (e) {
     console.error('Error setting up event listeners:', e);
@@ -132,6 +148,41 @@ async function loadStatus() {
     
     const listen = document.getElementById('listen').value || '127.0.0.1:8085';
     listenText.textContent = listen;
+    
+    // Render grouped script card (Android Parity)
+    const scriptsSection = document.getElementById('scriptsSection');
+    const scriptLabel = document.getElementById('scriptLabel');
+    const scriptSubtext = document.getElementById('scriptSubtext');
+    const scriptDot = document.getElementById('scriptDot');
+    const urlListContent = document.getElementById('urlListContent');
+
+    if (data.scripts && data.scripts.length > 0) {
+      scriptsSection.style.display = 'block';
+      scriptDot.className = 'script-dot' + (data.proxy_running ? ' active' : '');
+      
+      // Use the label of the first script as the primary label
+      scriptLabel.textContent = data.scripts[0].label;
+      
+      // Show count if there are more
+      if (data.scripts.length > 1) {
+        scriptSubtext.textContent = `${data.scripts.length} Apps Script URLs`;
+      } else {
+        scriptSubtext.textContent = '1 Apps Script URL';
+      }
+
+      // Populate popup content
+      urlListContent.innerHTML = '';
+      data.scripts.forEach((script, idx) => {
+        const entry = document.createElement('div');
+        entry.className = 'url-entry';
+        const shortUrl = script.id.split('/macros/s/')[1] ? '…' + script.id.split('/macros/s/')[1].substring(0, 15) + '…' : script.id;
+        entry.textContent = `${idx + 1}. ${shortUrl}`;
+        entry.title = script.id;
+        urlListContent.appendChild(entry);
+      });
+    } else {
+      scriptsSection.style.display = 'none';
+    }
     
     updateConfigCheck();
   } catch (err) {

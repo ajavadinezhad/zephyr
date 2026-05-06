@@ -1,6 +1,6 @@
 GOCACHE     ?= /tmp/go-build-cache
 ANDROID_HOME ?= $(HOME)/Android/Sdk
-GOTOOLCHAIN  ?= go1.26.0
+GOTOOLCHAIN  ?= go1.25.0
 GOFLAGS      ?= -buildvcs=false
 AAR_OUT       = android/app/libs/mobile.aar
 APK_VERSION   = 1.4.0

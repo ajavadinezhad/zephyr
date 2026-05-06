@@ -16,7 +16,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.22' # Adjusted to a stable existing version
+          go-version: '1.25'
           cache: true
       - name: Build for Linux
         run: go build -o zyrln-linux-amd64 ./platforms/desktop/

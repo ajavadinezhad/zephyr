@@ -172,6 +172,148 @@ header h1 {
   color: #e74c3c;
 }
 
+/* Scripts List */
+.scripts-section {
+  margin-top: 20px;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.scripts-section h3 {
+  margin-bottom: 15px;
+  color: #2c3e50;
+  font-size: 1rem;
+}
+
+.script-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  background: #fff;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.script-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #bdc3c7;
+}
+
+.script-dot.active {
+  background: #27ae60;
+  box-shadow: 0 0 5px rgba(39, 174, 96, 0.5);
+}
+
+/* Script Card Styling (Android Parity) */
+.script-card {
+  position: relative;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  overflow: visible;
+}
+
+.script-item-main {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 15px;
+}
+
+.script-info {
+  flex: 1;
+}
+
+.script-label {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.script-subtext {
+  font-size: 0.85rem;
+  color: #7f8c8d;
+}
+
+.info-btn {
+  background: #f1f2f6;
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  color: #3498db;
+  cursor: pointer;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.info-btn:hover {
+  background: #e1e2e6;
+}
+
+/* URL Popup */
+.url-list-popup {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  width: 300px;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  z-index: 100;
+  margin-top: 10px;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.popup-header {
+  padding: 12px;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+  font-size: 0.9rem;
+  background: #f8f9fa;
+  border-radius: 8px 8px 0 0;
+}
+
+.popup-header button {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: #95a5a6;
+}
+
+.url-list-content {
+  max-height: 200px;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.url-entry {
+  padding: 8px;
+  border-bottom: 1px solid #f8f9fa;
+  font-family: monospace;
+  font-size: 0.8rem;
+  color: #34495e;
+  word-break: break-all;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 /* Cards */
 .card {
   background: #f8f9fa;
@@ -210,10 +352,20 @@ header h1 {
   font-size: 1rem;
 }
 
-.form-group input:focus {
+.form-group input:focus, .form-group textarea:focus {
   outline: none;
   border-color: #3498db;
   box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+.form-group textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  font-family: monospace;
+  resize: vertical;
 }
 
 .hint {
