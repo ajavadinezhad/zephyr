@@ -1,10 +1,9 @@
 import { defineConfig } from 'vitepress'
 
 export default defineConfig({
+  base: '/zyrln/',
   title: 'Zyrln',
   description: 'Domain-fronting relay',
-
-  // تنظیمات چندزبانه
   locales: {
     root: {
       label: 'English',
