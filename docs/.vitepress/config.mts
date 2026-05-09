@@ -76,12 +76,17 @@ export default defineConfig({
               ]
             },
             {
-              text: 'نصب و راه‌اندازی',
+              text: 'راه اندازی ورکر',
+              items: [
+                { text: 'راه‌اندازی در سرور مجازی', link: '/fa/installation/vps-worker' },
+                { text: 'راه‌اندازی ورکر کلودفلر', link: '/fa/installation/cloudlfare-worker' }
+              ]
+            },
+            {
+              text: 'کلاینت',
               items: [
                 { text: 'نصب روی دسکتاپ', link: '/fa/installation/desktop' },
-                { text: 'نصب روی اندروید', link: '/fa/installation/android' },
-                { text: 'تنظیم Apps Script', link: '/fa/installation/appsscript' },
-                { text: 'راه‌اندازی VPS', link: '/fa/installation/vps' }
+                { text: 'نصب روی اندروید', link: '/fa/installation/android' }
               ]
             },
             {
