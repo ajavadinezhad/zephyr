@@ -7,7 +7,7 @@ hero:
   text: "Bypass DPI-Based Censorship"
   tagline: Route traffic through Google infrastructure to stay undetectable
   image:
-    src: /logo.png
+    src: /public/logo.png
     alt: Zyrln
   actions:
     - theme: brand

@@ -57,6 +57,7 @@ export default defineConfig({
       label: 'فارسی',
       lang: 'fa',
       link: '/fa/',
+      dir: 'rtl',
       title: 'مستندات Zyrln',
       description: 'رله Domain-Fronting برای عبور از سانسور مبتنی بر DPI',
       themeConfig: {
@@ -114,4 +115,5 @@ export default defineConfig({
       copyright: 'Copyright © 2024 Ahmad Javadi Nezhad'
     }
   }
+
 })
