@@ -710,10 +710,12 @@ document.addEventListener('DOMContentLoaded', () => {
             { max: Infinity, class: 'text-danger', name: 'BAD' }
         ];
 
-        function getPingClass(ms) {
-            return PING_QUALITY.find(range => ms <= range.max).class;
-        }
+        const getPingQuality = (ms) => PING_QUALITY.find(range => ms <= range.max);
 
+        const updatePingUI = (ms = null) => {
+            const className = getPingQuality(ms).class
+            pingResult.classList.add(className);
+        }
 
         pingResult.textContent = '…';
         setButtonDisabled(pingBtn, true);
@@ -725,16 +727,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 pingResult.textContent = `${data.ms} ms`;
                 showLog(`Ping: ${data.ms} ms`, 'info');
                 playMotion(pingBtn, 'motion-confirm');
-                pingResult.classList.add(getPingClass(data.ms));
+                updatePingUI(data.ms)
             } else {
                 pingResult.textContent = 'failed';
                 showLog(`Ping failed: ${data.error}`, 'error');
-                pingResult.classList.add('text-danger');
+                updatePingUI()
             }
         } catch (err) {
             pingResult.textContent = 'failed';
             showLog(`Ping error: ${err.message}`, 'error');
-            pingResult.classList.add('text-danger');
+            updatePingUI()
         } finally {
             setButtonDisabled(pingBtn, false);
         }
