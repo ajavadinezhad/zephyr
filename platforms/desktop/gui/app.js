@@ -703,8 +703,21 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     pingBtn.addEventListener('click', async () => {
+
+        const PING_QUALITY = [
+            { max: 199, class: 'text-success', name: 'GOOD' },
+            { max: 949, class: 'text-warning', name: 'MEDIUM' },
+            { max: Infinity, class: 'text-danger', name: 'BAD' }
+        ];
+
+        function getPingClass(ms) {
+            return PING_QUALITY.find(range => ms <= range.max).class;
+        }
+
+
         pingResult.textContent = '…';
         setButtonDisabled(pingBtn, true);
+        pingResult.classList.remove('text-success', 'text-warning', 'text-danger');
         try {
             const res = await fetch('/api/ping', { method: 'POST' });
             const data = await res.json();
@@ -712,13 +725,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 pingResult.textContent = `${data.ms} ms`;
                 showLog(`Ping: ${data.ms} ms`, 'info');
                 playMotion(pingBtn, 'motion-confirm');
+                pingResult.classList.add(getPingClass(data.ms));
             } else {
                 pingResult.textContent = 'failed';
                 showLog(`Ping failed: ${data.error}`, 'error');
+                pingResult.classList.add('text-danger');
             }
         } catch (err) {
             pingResult.textContent = 'failed';
             showLog(`Ping error: ${err.message}`, 'error');
+            pingResult.classList.add('text-danger');
         } finally {
             setButtonDisabled(pingBtn, false);
         }
@@ -726,7 +742,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     btnRegenCA.addEventListener('click', async () => {
         showLog(tLog('log.openSave'), 'info');
-        
+
         try {
             let handle = null;
             // 1. Try to get a save handle immediately (User Activation)
@@ -752,13 +768,13 @@ document.addEventListener('DOMContentLoaded', () => {
             // 2. Regenerate on backend
             const response = await fetch('/api/init-ca', { method: 'POST' });
             if (!response.ok) throw new Error('Generation failed');
-            
+
             showLog(`${tLog('log.certRegenerated')}`, 'info');
-            
+
             // 3. Download the data
             const certRes = await fetch('/api/download-ca');
             const blob = await certRes.blob();
-            
+
             // 4. Save to handle OR fallback
             if (handle) {
                 const writable = await handle.createWritable();
@@ -775,7 +791,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 window.URL.revokeObjectURL(url);
                 showLog(`${tLog('log.certDownloaded')}`, 'info');
             }
-            
+
             showToast(t('toast.certReady'));
             playMotion(btnRegenCA, 'motion-confirm');
             updateStatus();
@@ -796,7 +812,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await res.json();
             directModeToggle.classList.toggle('active', !!data.directEnabled);
             directModeToggle.title = data.directEnabled ? 'Direct mode ON — Google bypasses relay' : 'Direct mode OFF';
-        } catch (_) {}
+        } catch (_) { }
     }
 
     directModeToggle.addEventListener('click', async () => {
@@ -855,7 +871,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const container = document.getElementById('toastContainer');
         _loadingToast = document.createElement('div');
         _loadingToast.className = 'toast loading';
-        _loadingToast.innerHTML = `<div class="toast-spinner"></div><span>${text}</span>`;
+        _loadingToast.innerHTML = `<div class= "toast-spinner"></div> <span>${text}</span>`;
         container.appendChild(_loadingToast);
     }
 
@@ -866,16 +882,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    const eyeIcon = `
-        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    const eyeIcon = `<svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
             <circle cx="12" cy="12" r="3"></circle>
-        </svg>`;
-    const eyeOffIcon = `
-        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        </svg > `;
+    const eyeOffIcon = `<svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" >
             <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
             <line x1="1" y1="1" x2="23" y2="23"></line>
-        </svg>`;
+        </svg> `;
 
     toggleAuthVisible.innerHTML = eyeIcon;
     toggleAuthVisible.onclick = () => {
@@ -889,7 +903,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const entry = document.createElement('div');
         entry.className = `log-entry ${type}`;
         const time = savedTime || new Date().toLocaleTimeString([], { hour12: false });
-        entry.textContent = `[${time}] ${msg}`;
+        entry.textContent = `[${time}]${msg}`;
         entry.dataset.time = time;
         entry.dataset.msg = msg;
         entry.dataset.type = type;
@@ -981,7 +995,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (status.version) window.__ZYRLN_STATE__.version = status.version;
             if (status.os) window.__ZYRLN_STATE__.os = status.os;
             if (status.arch) window.__ZYRLN_STATE__.arch = status.arch;
-            
+
             // Ensure inputs are disabled/enabled based on running state
             validateInputs();
         } catch (err) {
@@ -1015,7 +1029,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     exportLogsBtn.onclick = () => {
-        const lines = window.__ZYRLN_STATE__.logs.map(l => `[${l.time}] ${l.msg}`).join('\n');
+        const lines = window.__ZYRLN_STATE__.logs.map(l => `[${l.time}]${l.msg}`).join('\n');
         if (!lines) return;
         const s = window.__ZYRLN_STATE__;
         const now = new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
@@ -1030,7 +1044,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `zyrln-log-${new Date().toISOString().slice(0,19).replace(/:/g,'-')}.txt`;
+        a.download = `zyrln - log - ${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.txt`;
         a.click();
         URL.revokeObjectURL(url);
     };
@@ -1132,7 +1146,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function pollProxyLogs() {
         if (!window.__ZYRLN_STATE__.running) return;
         try {
-            const res = await fetch(`/api/logs?seq=${proxyLogSeq}`);
+            const res = await fetch(`/ api / logs ? seq = ${proxyLogSeq}`);
             if (!res.ok) return;
             const newSeq = parseInt(res.headers.get('X-Log-Seq') || '0', 10);
             // Detect server restart: seq reset below our cursor — resync
@@ -1149,7 +1163,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }
             proxyLogSeq = newSeq;
-        } catch (_) {}
+        } catch (_) { }
     }
 
     setInterval(updateStatus, 2000);

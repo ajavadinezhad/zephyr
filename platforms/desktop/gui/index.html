@@ -41,7 +41,7 @@
                             <input class="listen-input" type="text" id="socks-listen" name="socks-listen" data-testid="input-socks-listen" placeholder="127.0.0.1:1080" autocomplete="off" spellcheck="false">
                         </div>
                     </div>
-                    <button id="directModeToggle" class="connect-btn icon-only" data-i18n-title="button.directMode" aria-label="Toggle direct mode">
+                    <button id="directModeToggle" class="connect-btn icon-only warning" data-i18n-title="button.directMode" aria-label="Toggle direct mode">
                         <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
                     </button>
                     <button id="toggleProxyBtn" class="connect-btn icon-only" data-testid="toggle-proxy-btn" data-i18n-title="button.connect" aria-label="Connect">
@@ -74,7 +74,7 @@
                 </div>
                 <form id="configForm" class="config-form" data-testid="config-form">
                     <div class="config-section-group profile-config-group">
-<div class="form-group">
+                        <div class="form-group">
                             <label>
                                 <span data-i18n="label.endpoints">Relay Endpoints</span>
                                 <span class="help-icon" data-i18n-title="help.endpoints" title="One or more Google Apps Script URLs. Failover happens automatically if one fails.">?</span>
@@ -93,11 +93,11 @@
                             </label>
                             <div class="input-with-action">
                                 <input type="password" id="auth-key" name="auth-key" data-testid="input-key">
-                                <button type="button" id="toggleAuthVisible" class="icon-btn" data-testid="btn-toggle-key-visibility">👁️</button>
+                                <button type="button" id="toggleAuthVisible" class="icon-btn" data-testid="btn-toggle-key-visibility"></button>
                             </div>
                         </div>
                     </div>
-<div class="save-btn-row">
+                    <div class="save-btn-row">
                         <button type="submit" class="save-btn icon-only" data-testid="save-config-btn" data-i18n-title="button.save" aria-label="Save settings">
                             <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"></path><path d="M17 21v-8H7v8"></path><path d="M7 3v5h8"></path></svg>
                         </button>
@@ -132,7 +132,7 @@
                     <div class="tool-item">
                         <div class="tool-info">
                             <h3 data-i18n="tool.ping">Ping</h3>
-                            <p id="pingResult" data-i18n="tool.pingDesc">Measure relay round-trip time</p>
+                            <p id="pingResult" class="dir-ltr" data-i18n="tool.pingDesc">Measure relay round-trip time</p>
                         </div>
                         <button id="pingBtn" class="action-btn icon-only" data-i18n-title="button.ping" aria-label="Ping relay">
                             <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49"/><path d="M7.76 16.24a6 6 0 0 1 0-8.49"/><path d="M20.07 3.93a10 10 0 0 1 0 14.14"/><path d="M3.93 20.07a10 10 0 0 1 0-14.14"/></svg>
@@ -199,7 +199,7 @@
     <div id="profileNameOverlay" class="modal-overlay">
         <div class="modal-content profile-name-modal">
             <div class="modal-header">
-                <h2 data-i18n="prompt.profileName">Profile name</h2>
+                <h4 data-i18n="prompt.profileName">Profile name</h2>
                 <button id="closeProfileNameModal" class="close-btn" aria-label="Close">
                     <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
                 </button>
