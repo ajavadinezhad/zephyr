@@ -873,7 +873,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const container = document.getElementById('toastContainer');
         _loadingToast = document.createElement('div');
         _loadingToast.className = 'toast loading';
-        _loadingToast.innerHTML = `<div class= "toast-spinner"></div> <span>${text}</span>`;
+        _loadingToast.innerHTML = `<div class="toast-spinner"></div> <span>${text}</span>`;
         container.appendChild(_loadingToast);
     }
 
@@ -905,7 +905,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const entry = document.createElement('div');
         entry.className = `log-entry ${type}`;
         const time = savedTime || new Date().toLocaleTimeString([], { hour12: false });
-        entry.textContent = `[${time}]${msg}`;
+        entry.textContent = `[${time}] ${msg}`;
         entry.dataset.time = time;
         entry.dataset.msg = msg;
         entry.dataset.type = type;
@@ -1031,7 +1031,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     exportLogsBtn.onclick = () => {
-        const lines = window.__ZYRLN_STATE__.logs.map(l => `[${l.time}]${l.msg}`).join('\n');
+        const lines = window.__ZYRLN_STATE__.logs.map(l => `[${l.time}] ${l.msg}`).join('\n');
         if (!lines) return;
         const s = window.__ZYRLN_STATE__;
         const now = new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
@@ -1046,7 +1046,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `zyrln - log - ${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.txt`;
+        a.download = `zyrln-log-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.txt`;
         a.click();
         URL.revokeObjectURL(url);
     };
@@ -1148,7 +1148,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function pollProxyLogs() {
         if (!window.__ZYRLN_STATE__.running) return;
         try {
-            const res = await fetch(`/ api / logs ? seq = ${proxyLogSeq}`);
+            const res = await fetch(`/api/logs?seq=${proxyLogSeq}`);
             if (!res.ok) return;
             const newSeq = parseInt(res.headers.get('X-Log-Seq') || '0', 10);
             // Detect server restart: seq reset below our cursor — resync
