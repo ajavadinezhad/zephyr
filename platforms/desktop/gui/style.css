@@ -1315,6 +1315,9 @@ select:focus {
 }
 
 .text-btn {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
     background: var(--panel-soft);
     border: 1px solid var(--border);
     color: var(--text-dim);
