@@ -360,20 +360,24 @@ body:not(.rtl) .main-header {
     box-shadow: 0 4px 16px color-mix(in srgb, var(--accent-error) 48%, transparent);
 }
 
-.connect-btn.warning {
-    background: var(--accent-warning);
+.connect-btn.direct-mode {
+    color: var(--text-dim);
+    background: transparent;
+    border: 1px solid var(--border);
 }
 
-.connect-btn.warning:not(.active) {
-    background: var(--accent-error);
+.connect-btn.direct-mode:not(.active) {
+    color: var(--accent-warning);
+    border-color: var(--border);
 }
 
-.connect-btn.warning:hover:not(.active) {
-    background: var(--accent-error);
+.connect-btn.direct-mode:hover:not(.active) {
+    color: var(--accent-warning);
 }
 
-.connect-btn.warning:hover {
-    box-shadow: 0 4px 16px color-mix(in srgb, var(--accent-warning) 48%, transparent);
+.connect-btn.direct-mode:hover {
+    box-shadow: none;
+    transform: none;
 }
 
 .connect-btn:disabled {
