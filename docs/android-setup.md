@@ -43,11 +43,11 @@ For multiple Apps Script URLs (better resilience):
 Required for HTTPS sites. Skip this if you only need HTTP sites.
 
 1. Tap **Install CA Certificate** in the app
-2. The cert is saved to `Downloads/zyrln-ca.pem`
+2. Save the cert file when prompted (note where you save it)
 3. Tap **Open Settings** when prompted
 4. Go to **Biometrics & security → Other security settings → Install from device storage**
    - On stock Android: **Settings → Security → Encryption & credentials → Install a certificate → CA certificate**
-5. Browse to Downloads, select `zyrln-ca.pem`
+5. Browse to the saved file and select `zyrln-ca.pem`
 6. Choose **CA certificate** when asked what type
 
 > ⚠️ Never copy the `.pem` file from your computer to your phone. Each device generates its own unique CA. Using the wrong certificate causes SSL errors. Always use the **Install CA Certificate** button inside the app.

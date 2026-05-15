@@ -51,11 +51,11 @@ APK را از صفحه [Releases](../../../releases) دانلود کن و روی
 برای سایت‌های HTTPS لازم است. اگر فقط سایت‌های HTTP نیاز داری، این مرحله را رد کن.
 
 1. در اپ روی **Install CA Certificate** بزن
-2. گواهینامه در `Downloads/zyrln-ca.pem` ذخیره می‌شود
+2. فایل گواهینامه را ذخیره کن (مسیر ذخیره را یادداشت کن)
 3. وقتی پرسیده شد، **Open Settings** را بزن
 4. برو به **Biometrics & security → Other security settings → Install from device storage**
    - در اندروید stock: **Settings → Security → Encryption & credentials → Install a certificate → CA certificate**
-5. از پوشه Downloads فایل `zyrln-ca.pem` را انتخاب کن
+5. فایل ذخیره‌شده `zyrln-ca.pem` را پیدا و انتخاب کن
 6. وقتی پرسیده شد نوع را **CA certificate** انتخاب کن
 
 > ⚠️ هرگز فایل `.pem` را از کامپیوتر به گوشی کپی نکن. هر دستگاه CA منحصربه‌فرد خودش را می‌سازد. استفاده از گواهینامه اشتباه باعث خطای SSL می‌شود. همیشه از دکمه **Install CA Certificate** داخل اپ استفاده کن.
