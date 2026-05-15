@@ -12,10 +12,10 @@
 - [فقط می‌خوام یوتیوب و گوگل باز بشه](#فقط-میخوام-یوتیوب-و-گوگل-باز-بشه)
 - [می‌خوام همه چیز باز بشه](#میخوام-همه-چیز-باز-بشه)
   - [چی نیاز دارم](#چی-نیاز-دارم)
-  - [مرحله ۱ — ساخت کلید امنیتی](#مرحله-۱--ساخت-کلید-امنیتی)
-  - [مرحله ۲ — راه‌اندازی Apps Script](#مرحله-۲--راهاندازی-apps-script)
-  - [مرحله ۳ — راه‌اندازی رله خروجی](#مرحله-۳--راهاندازی-رله-خروجی)
-  - [مرحله ۴ — اجرای برنامه دسکتاپ](#مرحله-۴--اجرای-برنامه-دسکتاپ)
+  - [مرحله ۱ — اجرای برنامه دسکتاپ](#مرحله-۱--اجرای-برنامه-دسکتاپ)
+  - [مرحله ۲ — راه‌اندازی رله خروجی](#مرحله-۲--راهاندازی-رله-خروجی)
+  - [مرحله ۳ — راه‌اندازی Apps Script](#مرحله-۳--راهاندازی-apps-script)
+  - [مرحله ۴ — اتصال](#مرحله-۴--اتصال)
   - [مرحله ۵ — راه‌اندازی اندروید](#مرحله-۵--راهاندازی-اندروید)
 - [ساخت از سورس](#ساخت-از-سورس)
 - [مشکلات رایج](#مشکلات-رایج)
@@ -76,33 +76,73 @@
 | ☁️ یکی از این دو | VPS با آی‌پی ثابت | ~۵ دلار در ماه |
 | ☁️ یا این | اکانت Cloudflare | پلن رایگان کافیه |
 
-### مرحله ۱ — ساخت کلید امنیتی
+### مرحله ۱ — اجرای برنامه دسکتاپ
 
-یک بار این دستور را با باینری مخصوص سیستم‌عاملت اجرا کن. خروجی را جایی ذخیره کن — در هر مرحله به آن نیاز داری.
+1. باینری سیستم‌عاملت را از [Releases](../../releases) دانلود کن
+2. اجرا کن — رابط گرافیکی خودبه‌خود در مرورگر باز می‌شود
+   - **macOS:** رابط گرافیکی به‌طور خودکار باز نمی‌شود؛ باید فلگ `-gui` را صریحاً پاس بدی:
 
 <div dir="ltr" align="left" style="direction: ltr; text-align: left;">
 
-```powershell
-# Windows
-.\zyrln-VERSION-windows-amd64.exe -gen-key
-```
-
 ```bash
-# Linux
-./zyrln-VERSION-linux-amd64 -gen-key
-
 # macOS Apple Silicon
-./zyrln-VERSION-darwin-arm64 -gen-key
-
+./zyrln-VERSION-darwin-arm64 -gui
 # macOS Intel
-./zyrln-VERSION-darwin-amd64 -gen-key
+./zyrln-VERSION-darwin-amd64 -gui
 ```
 
 </div>
 
-مثال: `swrkwbMS1X666fjzReip+PbodKcPyDK7Xbk5gRSgRUE=`
+3. در بخش **Security** گواهینامه CA بساز و نصب کن (برای سایت‌های HTTPS لازم است)
+4. در بخش **Settings** روی **Generate Key** کلیک کن و کلید را کپی کن — در مراحل بعد به آن نیاز داری
 
-### مرحله ۲ — راه‌اندازی Apps Script
+**تنظیم مرورگر:**
+
+| مرورگر | کجا تنظیم شود |
+|---|---|
+| Chrome / Edge | Settings → System → Open proxy settings → Manual proxy → `127.0.0.1:8085` |
+| Firefox | Settings → Network → Manual proxy → HTTP `127.0.0.1` port `8085` |
+| کل سیستم | SOCKS5 با آدرس `127.0.0.1` پورت `1080` در تنظیمات شبکه سیستم‌عامل |
+
+**نصب گواهینامه CA** (برای سایت‌های HTTPS ضروری است):
+
+- **Chrome/Edge**: Settings → Privacy → Security → Manage certificates → Authorities → Import فایل `zyrln-ca.pem`
+- **Firefox**: Settings → Privacy & Security → Certificates → View Certificates → Authorities → Import
+
+### مرحله ۲ — راه‌اندازی رله خروجی
+
+این گره خروجی است که سایت‌های واقعی را باز می‌کند. یکی را انتخاب کن:
+
+#### گزینه الف — Cloudflare Worker (پیشنهادی، رایگان)
+
+1. به [dash.cloudflare.com](https://dash.cloudflare.com) برو → **Workers & Pages → Create**
+2. محتوای فایل [`relay/cloudflare/worker.js`](relay/cloudflare/worker.js) را جای‌گذاری کن
+3. روی **Deploy** کلیک کن و آدرس Worker را کپی کن:
+   `https://worker-name.subdomain.workers.dev`
+
+#### گزینه ب — VPS
+
+راهنمای کامل: **[docs/fa/vps-setup.md](docs/fa/vps-setup.md)**
+
+خلاصه — روی VPS:
+
+<div dir="ltr" align="left" style="direction: ltr; text-align: left;">
+
+```bash
+# بیلد و کپی روی سرور
+GOOS=linux GOARCH=amd64 go build -o zyrln-relay ./relay/vps/main.go
+scp zyrln-relay root@IP_VPS:/usr/local/bin/
+
+# فایل /etc/zyrln-relay.env بساز:
+ZYRLN_RELAY_LISTEN=0.0.0.0:8787
+ZYRLN_RELAY_KEY=
+
+ufw allow 8787/tcp
+```
+
+</div>
+
+### مرحله ۳ — راه‌اندازی Apps Script
 
 این درب ورودی است. روی سرورهای گوگل اجرا می‌شود و ترافیک تو را دریافت می‌کند.
 
@@ -129,84 +169,11 @@ const EXIT_RELAY_KEY = "";
 
 > هر اکانت گوگل ۲۰,۰۰۰ درخواست در روز دارد. می‌توانی چندین لینک از اکانت‌های مختلف را با ویرگول جدا کنی. زیرلن همه را موازی امتحان می‌کند.
 
-### مرحله ۳ — راه‌اندازی رله خروجی
+### مرحله ۴ — اتصال
 
-این گره خروجی است. سایت‌های واقعی را از طرف Apps Script باز می‌کند. یکی را انتخاب کن:
-
-#### گزینه الف — Cloudflare Worker (پیشنهادی، رایگان)
-
-1. به [dash.cloudflare.com](https://dash.cloudflare.com) برو → **Workers & Pages → Create**
-2. محتوای فایل [`relay/cloudflare/worker.js`](relay/cloudflare/worker.js) را جای‌گذاری کن
-3. روی **Deploy** کلیک کن و آدرس Worker را کپی کن:
-   `https://worker-name.subdomain.workers.dev`
-4. برگرد به Apps Script و `EXIT_RELAY_URL` را آپدیت کن:
-
-<div dir="ltr" align="left" style="direction: ltr; text-align: left;">
-
-```js
-const EXIT_RELAY_URL = "https://worker-name.subdomain.workers.dev/relay";
-```
-
-</div>
-
-5. دوباره دیپلوی کن (Deploy → Manage deployments → New version)
-
-#### گزینه ب — VPS
-
-راهنمای کامل: **[docs/fa/vps-setup.md](docs/fa/vps-setup.md)**
-
-خلاصه — روی VPS:
-
-<div dir="ltr" align="left" style="direction: ltr; text-align: left;">
-
-```bash
-# بیلد و کپی روی سرور
-GOOS=linux GOARCH=amd64 go build -o zyrln-relay ./relay/vps/main.go
-scp zyrln-relay root@IP_VPS:/usr/local/bin/
-
-# فایل /etc/zyrln-relay.env بساز:
-ZYRLN_RELAY_LISTEN=0.0.0.0:8787
-ZYRLN_RELAY_KEY=
-
-ufw allow 8787/tcp
-```
-
-</div>
-
-### مرحله ۴ — اجرای برنامه دسکتاپ
-
-1. باینری سیستم‌عاملت را از [Releases](../../releases) دانلود کن یا از سورس بیلد کن
-2. اجرا کن — رابط گرافیکی خودبه‌خود باز می‌شود
-   - **macOS:** رابط گرافیکی به‌طور خودکار باز نمی‌شود؛ باید فلگ `-gui` را صریحاً پاس بدی:
-
-<div dir="ltr" align="left" style="direction: ltr; text-align: left;">
-
-```bash
-# macOS Apple Silicon
-./zyrln-VERSION-darwin-arm64 -gui
-# macOS Intel
-./zyrln-VERSION-darwin-amd64 -gui
-```
-
-</div>
-
-3. روی **+** کلیک کن تا پروفایل جدید بسازی
-4. آدرس Apps Script و کلید امنیتی را وارد کن
-5. **Save** → **Connect**
-6. در بخش **Security** گواهینامه CA بساز و نصب کن (برای سایت‌های HTTPS لازم است)
-
-**تنظیم مرورگر:**
-
-| مرورگر | کجا تنظیم شود |
-|---|---|
-| Chrome / Edge | Settings → System → Open proxy settings → Manual proxy → `127.0.0.1:8085` |
-| Firefox | Settings → Network → Manual proxy → HTTP `127.0.0.1` port `8085` |
-| کل سیستم | SOCKS5 با آدرس `127.0.0.1` پورت `1080` در تنظیمات شبکه سیستم‌عامل |
-
-**نصب گواهینامه CA** (برای سایت‌های HTTPS ضروری است):
-
-- **Chrome/Edge**: Settings → Privacy → Security → Manage certificates → Authorities → Import فایل `zyrln-ca.pem`
-- **Firefox**: Settings → Privacy & Security → Certificates → View Certificates → Authorities → Import
+1. در برنامه روی **+** کلیک کن تا پروفایل جدید بسازی
+2. آدرس Apps Script و کلید امنیتی را وارد کن
+3. **Save** → **Connect**
 
 ### مرحله ۵ — راه‌اندازی اندروید
 
