@@ -144,6 +144,8 @@ Modes:
   -init-ca           generate a local CA cert for HTTPS proxy interception
   -serve-proxy       start local HTTP+HTTPS and SOCKS5 proxies backed by the relay
   -relay-fetch-url   fetch one URL through the full relay chain
+  -google-direct-probe
+                     probe Google Direct Mode fragmentation profiles
   -export-config     print config as JSON for importing into the Android app
 
 Config: flags can be set in config.env (one key=value per line, flag name as key).
@@ -172,6 +174,7 @@ Flags:
 	socksListenFlag := flag.String("socks-listen", "127.0.0.1:1080", "SOCKS5 listen address for -serve-proxy")
 	noDirectFlag := flag.Bool("no-direct", false, "disable direct TLS-fragmentation bypass for Google domains (route all traffic through relay)")
 	directEnabledFlag := flag.Bool("direct-enabled", true, "enable direct TLS-fragmentation bypass for Google domains (saved to config.env by GUI)")
+	directProbeFlag := flag.Bool("google-direct-probe", false, "probe Google Direct Mode fragmentation profiles")
 	exportConfigFlag := flag.Bool("export-config", false, "print config as JSON for importing into the Android app")
 	initCAFlag := flag.Bool("init-ca", false, "generate a local CA certificate for HTTPS proxy interception")
 	genKeyFlag := flag.Bool("gen-key", false, "generate a random 32-byte base64 auth key and print it")
@@ -280,6 +283,20 @@ Flags:
 		return
 	}
 
+	if *directProbeFlag {
+		targets := []string{"www.youtube.com"}
+		fronts := core.DirectFronts
+		total := len(targets) * len(fronts) * len(core.DirectProfiles()) * *repeatFlag
+		if total < 1 {
+			total = 1
+		}
+		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(total+1)**timeoutFlag)
+		defer cancel()
+		rep := core.ProbeDirectProfiles(ctx, targets, fronts, *repeatFlag, *timeoutFlag)
+		printDirectAdaptiveReport(rep, *repeatFlag, *timeoutFlag)
+		return
+	}
+
 	if *serveProxyFlag {
 		if len(appScriptURLs) == 0 {
 			fmt.Fprintln(os.Stderr, "-serve-proxy requires -fronted-appscript-url")
@@ -370,6 +387,46 @@ Flags:
 
 func parseURLList(raw string) []string {
 	return core.ParseURLList(raw)
+}
+
+func printDirectAdaptiveReport(rep core.DirectProbeReport, repeat int, timeout time.Duration) {
+	fmt.Printf("ZPROBE adaptive (direct) fa-IR field test\n")
+	fmt.Printf("targets=%d fronts=%d profiles=%d repeat=%d timeout=%s\n",
+		len(rep.Targets), len(rep.Fronts), len(core.DirectProfiles()), repeat, timeout)
+	fmt.Printf("profile details redacted; exact local result stays on-device\n\n")
+
+	for _, target := range rep.Targets {
+		tried := 0
+		fmt.Printf("target %s\n", strings.TrimSuffix(target, ":443"))
+		for _, r := range rep.Results {
+			if r.Target != target {
+				continue
+			}
+			tried++
+			if r.OK {
+				fmt.Printf("  ok   front=%-20s profile=%s stable=%d/%d avg=%.1f ms\n",
+					r.Front, r.ProfileID, r.Stable, r.Repeat, ms(r.Avg))
+			} else {
+				reason := r.Reason
+				if reason == "" {
+					reason = "error"
+				}
+				fmt.Printf("  fail front=%-20s profile=%s stable=%d/%d reason=%s\n",
+					r.Front, r.ProfileID, r.Stable, r.Repeat, reason)
+			}
+		}
+		if best, ok := rep.Best[target]; ok {
+			fmt.Printf("  BEST target=%s front=%s profile=%s avg=%.1f ms tried=%d\n",
+				strings.TrimSuffix(best.Target, ":443"), best.Front, best.ProfileID, ms(best.Avg), tried)
+		} else {
+			fmt.Printf("  BEST target=%s none tried=%d\n", strings.TrimSuffix(target, ":443"), tried)
+		}
+		fmt.Println()
+	}
+}
+
+func ms(d time.Duration) float64 {
+	return float64(d.Microseconds()) / 1000
 }
 
 func relayFetch(client *http.Client, appScriptURLs []string, frontDomain, authKey, targetURL, bodyOut string, timeout time.Duration) error {

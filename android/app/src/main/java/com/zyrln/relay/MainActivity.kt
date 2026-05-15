@@ -132,6 +132,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         prefs = getSharedPreferences("config", Context.MODE_PRIVATE)
+        Mobile.setCacheDir(filesDir.absolutePath)
         binding.versionTag.text = "v${BuildConfig.VERSION_NAME}"
 
         binding.btnImportConfig.setOnClickListener { importConfig() }
@@ -189,6 +190,9 @@ class MainActivity : AppCompatActivity() {
             activeUrl = prefs.getString("url", null)
             activeKey = prefs.getString("key", null)
         }
+        // Restore direct mode state — persisted so reconnect uses the same mode.
+        directOnlySelected = prefs.getBoolean("direct_only", activeUrl == null && activeKey == null)
+        Mobile.setDirectEnabled(prefs.getBoolean("direct_enabled", directOnlySelected))
         updateUI(running = Mobile.isRunning())
         updateLanguageButton()
         updateThemeButton()
@@ -534,6 +538,7 @@ class MainActivity : AppCompatActivity() {
                         selectedKey = key
                         directOnlySelected = false
                         Mobile.setDirectEnabled(false)
+                        prefs.edit().putBoolean("direct_only", false).putBoolean("direct_enabled", false).apply()
                     }
                     refreshList(running = false)
                     updateDirectBtn()
@@ -579,7 +584,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun connectConfig(url: String, key: String) {
-        Mobile.setDirectEnabled(false)
+        directOnlySelected = false
+        prefs.edit().putBoolean("direct_only", false).apply()
         if (!hasInstalledCA()) {
             activeUrl = null
             activeKey = null
@@ -599,8 +605,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun connectDirect() {
         Mobile.setDirectEnabled(true)
+        directOnlySelected = true
+        prefs.edit().putString("url", "").putString("key", "")
+            .putBoolean("direct_only", true).putBoolean("direct_enabled", true).apply()
         updateDirectBtn()
-        prefs.edit().putString("url", "").putString("key", "").apply()
         val vpnIntent = VpnService.prepare(this)
         if (vpnIntent != null) vpnPermissionLauncher.launch(vpnIntent) else launchVpnService()
     }
@@ -611,6 +619,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun appendLog(level: String, msg: String) {
+        if (level == "debug") return
         runOnUiThread {
             val time = java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.US)
                 .format(java.util.Date())
@@ -755,10 +764,16 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun shareLog() {
-        val text = logCache.toString().trim()
-        if (text.isEmpty()) {
+        // GetAllLogs includes debug-level entries (race probe failures etc.) that
+        // are filtered from the display — important for diagnosing connectivity issues.
+        val raw = Mobile.getAllLogs().trim()
+        if (raw.isEmpty()) {
             Toast.makeText(this, R.string.log_empty, Toast.LENGTH_SHORT).show()
             return
+        }
+        val lines = raw.split('\n').joinToString("\n") { line ->
+            val tab = line.indexOf('\t')
+            if (tab >= 0) "[${line.substring(0, tab)}] ${line.substring(tab + 1)}" else line
         }
         val header = buildString {
             appendLine("Zyrln Android v${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})")
@@ -770,7 +785,7 @@ class MainActivity : AppCompatActivity() {
         val intent = Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"
             putExtra(Intent.EXTRA_SUBJECT, getString(R.string.log_share_subject))
-            putExtra(Intent.EXTRA_TEXT, header + text)
+            putExtra(Intent.EXTRA_TEXT, header + lines)
         }
         startActivity(Intent.createChooser(intent, getString(R.string.log_share_subject)))
     }
@@ -802,6 +817,7 @@ class MainActivity : AppCompatActivity() {
         if (Mobile.isRunning() && directOnlySelected) return
         val next = !Mobile.isDirectEnabled()
         Mobile.setDirectEnabled(next)
+        prefs.edit().putBoolean("direct_enabled", next).apply()
         updateDirectBtn()
     }
 

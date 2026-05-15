@@ -12,6 +12,8 @@ import (
 	"time"
 
 	"zyrln/relay/core"
+
+	"github.com/xjasonlyu/tun2socks/v2/engine"
 )
 
 const (
@@ -116,6 +118,7 @@ func StartDirect(listenAddr string) string {
 	}
 
 	core.SetLogFunc(func(level, msg string) { emitLog(level, msg) })
+	core.SetDirectEnabled(true)
 
 	client := core.NewHTTPClient(defaultTimeout)
 	srv, coal, err := core.StartProxyWithCoalescer(listenAddr, nil, defaultFrontDomain, "", nil, client, defaultTimeout)
@@ -201,6 +204,23 @@ func (lw *logWriter) Write(p []byte) (int, error) {
 	return len(p), nil
 }
 
+// GetAllLogs returns the entire log buffer including debug entries, for use in
+// bug reports. Unlike PollLogs it does not advance the read cursor.
+func GetAllLogs() string {
+	logMu.Lock()
+	defer logMu.Unlock()
+	var sb strings.Builder
+	for _, e := range logBuf {
+		if sb.Len() > 0 {
+			sb.WriteByte('\n')
+		}
+		sb.WriteString(e.Level)
+		sb.WriteByte('\t')
+		sb.WriteString(e.Message)
+	}
+	return sb.String()
+}
+
 func parseURLList(raw string) []string {
 	return core.ParseURLList(raw)
 }
@@ -272,6 +292,31 @@ func LastError() string {
 	return lastErr
 }
 
+// SetCacheDir sets the directory used to persist the remembered direct profile
+// across app restarts. Call once at startup with the app's files directory.
+func SetCacheDir(dir string) {
+	core.SetCacheDir(dir)
+}
+
+// StartTun starts a tun2socks engine that reads raw IP packets from tunFd and
+// forwards TCP/UDP through the local proxy at proxyAddr (e.g. "http://127.0.0.1:8085").
+// Call once after the VPN TUN interface is established.
+func StartTun(tunFd int, proxyAddr string) {
+	key := &engine.Key{
+		Device:     fmt.Sprintf("fd://%d", tunFd),
+		Proxy:      proxyAddr,
+		MTU:        1500,
+		UDPTimeout: time.Second,
+	}
+	engine.Insert(key)
+	engine.Start()
+}
+
+// StopTun stops the tun2socks engine.
+func StopTun() {
+	engine.Stop()
+}
+
 // SetDirectEnabled controls whether Google domains bypass the relay via TLS
 // fragmentation. Enabled by default. Safe to call at any time.
 func SetDirectEnabled(enabled bool) {
@@ -283,11 +328,13 @@ func IsDirectEnabled() bool {
 	return core.GetDirectEnabled()
 }
 
-// PingDirect measures a direct (non-relay) fragmented TCP connection to gstatic.
+// PingDirect measures a fragmented direct connection to a Google front.
+// This exercises the same path live traffic uses: TCP to an open Google domain
+// with a fragmented ClientHello to bypass SNI inspection.
 // Returns round-trip time as "142 ms" or an error string prefixed with "error: ".
 func PingDirect() string {
 	start := time.Now()
-	conn, ok := core.DialFragment("www.gstatic.com:443")
+	conn, ok := core.DialFragment("www.youtube.com:443")
 	if !ok {
 		return "error: direct connection failed"
 	}

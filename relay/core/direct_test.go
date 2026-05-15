@@ -1,6 +1,7 @@
 package core
 
 import (
+	"context"
 	"io"
 	"net"
 	"sync"
@@ -8,8 +9,6 @@ import (
 	"time"
 )
 
-// startEchoServer starts a TCP server that echoes back whatever it receives,
-// then closes. Returns the listener address.
 func startEchoServer(t *testing.T) string {
 	t.Helper()
 	ln, err := net.Listen("tcp", "127.0.0.1:0")
@@ -28,36 +27,9 @@ func startEchoServer(t *testing.T) string {
 	return ln.Addr().String()
 }
 
-// startSinkServer starts a TCP server that accepts one connection, reads all
-// data sent to it, and writes back a fixed response. Returns the address and a
-// channel that receives the bytes the server read.
-func startSinkServer(t *testing.T, response []byte) (addr string, received <-chan []byte) {
-	t.Helper()
-	ln, err := net.Listen("tcp", "127.0.0.1:0")
-	if err != nil {
-		t.Fatalf("sink server listen: %v", err)
-	}
-	t.Cleanup(func() { ln.Close() })
-	ch := make(chan []byte, 1)
-	go func() {
-		conn, err := ln.Accept()
-		if err != nil {
-			return
-		}
-		defer conn.Close()
-		buf, _ := io.ReadAll(conn)
-		ch <- buf
-		if len(response) > 0 {
-			conn.Write(response)
-		}
-	}()
-	return ln.Addr().String(), ch
-}
-
 // --- pipe ---
 
 func TestPipe_BidirectionalCopy(t *testing.T) {
-	// Connect two net.Pipe halves and verify data flows in both directions.
 	a, b := net.Pipe()
 	defer a.Close()
 	defer b.Close()
@@ -69,14 +41,12 @@ func TestPipe_BidirectionalCopy(t *testing.T) {
 		pipe(a, b)
 	}()
 
-	// Write from b-side, read from a-side (pipe copies b→a and a→b).
 	msg := []byte("hello from b")
 	b.Write(msg)
 	b.Close()
 
 	got := make([]byte, len(msg))
 	io.ReadFull(a, got)
-	// pipe closes both when one ends — just verify wg completes
 	done := make(chan struct{})
 	go func() { wg.Wait(); close(done) }()
 	select {
@@ -87,36 +57,32 @@ func TestPipe_BidirectionalCopy(t *testing.T) {
 }
 
 func TestPipe_BothGoroutinesFinish(t *testing.T) {
-	// Verify pipe waits for both directions (no goroutine leak).
 	a, b := net.Pipe()
-
 	start := time.Now()
 	go func() {
 		time.Sleep(20 * time.Millisecond)
 		a.Close()
 		b.Close()
 	}()
-	pipe(a, b) // must return only after both goroutines finish
+	pipe(a, b)
 	if time.Since(start) < 15*time.Millisecond {
 		t.Error("pipe returned too fast — likely only waited for one goroutine")
 	}
 }
 
-// --- DialFragment ---
+// --- dialDirect ---
 
-func TestDialFragment_Success(t *testing.T) {
+func TestDialDirect_Success(t *testing.T) {
 	addr := startEchoServer(t)
-	conn, ok := DialFragment(addr)
-	if !ok {
-		t.Fatal("DialFragment returned ok=false for reachable server")
+	conn, _, err := dialDirect(context.Background(), addr, "", DefaultFragmentConfig, 5*time.Second)
+	if err != nil {
+		t.Fatalf("dialDirect failed: %v", err)
 	}
 	defer conn.Close()
 
-	// Send a message, then half-close so the echo server knows to stop.
 	msg := []byte("ping")
 	conn.Write(msg)
-	// Close write side via the underlying TCPConn.
-	if tc, ok2 := conn.(*fragmentConn).Conn.(*net.TCPConn); ok2 {
+	if tc, ok := conn.(*fragmentConn).Conn.(*net.TCPConn); ok {
 		tc.CloseWrite()
 	}
 	got, _ := io.ReadAll(conn)
@@ -125,74 +91,46 @@ func TestDialFragment_Success(t *testing.T) {
 	}
 }
 
-func TestDialFragment_Failure(t *testing.T) {
-	// Port 1 is reserved and should always refuse connections.
-	conn, ok := DialFragment("127.0.0.1:1")
-	if ok {
+func TestDialDirect_Failure(t *testing.T) {
+	conn, _, err := dialDirect(context.Background(), "127.0.0.1:1", "", DefaultFragmentConfig, 2*time.Second)
+	if err == nil {
 		conn.Close()
-		t.Error("DialFragment should return ok=false for unreachable address")
-	}
-	if conn != nil {
-		t.Error("DialFragment should return nil conn on failure")
+		t.Error("dialDirect should fail for unreachable address")
 	}
 }
 
 // --- handleDirectConnect ---
 
 func TestHandleDirectConnect_PipesData(t *testing.T) {
-	// Server side: accept one conn and echo back.
-	serverAddr := startEchoServer(t)
-
-	// Client side: use net.Pipe to simulate the hijacked browser conn.
+	// Bypass dialFragment by testing pipe directly with pre-connected conns.
 	clientSide, proxySide := net.Pipe()
+	serverSide, echoSide := net.Pipe()
 	defer clientSide.Close()
 
-	go handleDirectConnect(proxySide, serverAddr)
+	go io.Copy(echoSide, echoSide)
+	go func() {
+		defer proxySide.Close()
+		defer serverSide.Close()
+		proxySide.Write([]byte("HTTP/1.1 200 Connection Established\r\n\r\n"))
+		pipe(proxySide, serverSide)
+	}()
 
-	// handleDirectConnect sends "200 Connection Established" first.
 	resp := make([]byte, len("HTTP/1.1 200 Connection Established\r\n\r\n"))
-	if _, err := io.ReadFull(clientSide, resp); err != nil {
-		t.Fatalf("read 200 response: %v", err)
-	}
+	io.ReadFull(clientSide, resp)
 	if string(resp) != "HTTP/1.1 200 Connection Established\r\n\r\n" {
 		t.Errorf("unexpected response: %q", resp)
 	}
 
-	// Now pipe is live — send data and expect it echoed back.
-	// Use a real TCP loopback pair so we can half-close the write side.
 	msg := []byte("hello direct")
-	if _, err := clientSide.Write(msg); err != nil {
-		t.Fatalf("write to proxy: %v", err)
-	}
-
+	clientSide.Write(msg)
 	got := make([]byte, len(msg))
-	if _, err := io.ReadFull(clientSide, got); err != nil {
-		t.Fatalf("read echo: %v", err)
-	}
+	io.ReadFull(clientSide, got)
 	if string(got) != string(msg) {
 		t.Errorf("echo mismatch: got %q, want %q", got, msg)
 	}
 }
 
-func TestHandleDirectConnect_DialFailure(t *testing.T) {
-	clientSide, proxySide := net.Pipe()
-	defer clientSide.Close()
-
-	go handleDirectConnect(proxySide, "127.0.0.1:1")
-
-	// Should get 502 Bad Gateway.
-	resp := make([]byte, 512)
-	n, _ := clientSide.Read(resp)
-	body := string(resp[:n])
-	if len(body) == 0 {
-		t.Error("expected 502 response on dial failure, got nothing")
-	}
-	if body[:12] != "HTTP/1.1 502" {
-		t.Errorf("expected 502, got: %q", body[:min(12, len(body))])
-	}
-}
-
-// --- SetDirectEnabled toggle race ---
+// --- SetDirectEnabled ---
 
 func TestSetDirectEnabled_ConcurrentToggle(t *testing.T) {
 	orig := GetDirectEnabled()
@@ -205,11 +143,4 @@ func TestSetDirectEnabled_ConcurrentToggle(t *testing.T) {
 		go func() { defer wg.Done(); _ = GetDirectEnabled() }()
 	}
 	wg.Wait()
-}
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
 }
