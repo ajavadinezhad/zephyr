@@ -41,11 +41,14 @@
 
 1. برنامه را از صفحه [Releases](../../releases) دانلود کن
 2. اجرا کن — رابط گرافیکی خودبه‌خود در مرورگر باز می‌شود
-   - **macOS:** رابط گرافیکی به‌طور خودکار باز نمی‌شود؛ باید فلگ `-gui` را صریحاً پاس بدی:
+   - **ویندوز:** روی فایل `.exe` دوبار کلیک کن — GUI خودکار باز می‌شود
+   - **لینوکس / macOS:** از ترمینال با فلگ `-gui` اجرا کن:
 
 <div dir="ltr" align="left" style="direction: ltr; text-align: left;">
 
 ```bash
+# Linux
+./zyrln-VERSION-linux-amd64 -gui
 # macOS Apple Silicon
 ./zyrln-VERSION-darwin-arm64 -gui
 # macOS Intel
@@ -80,11 +83,14 @@
 
 1. باینری سیستم‌عاملت را از [Releases](../../releases) دانلود کن
 2. اجرا کن — رابط گرافیکی خودبه‌خود در مرورگر باز می‌شود
-   - **macOS:** رابط گرافیکی به‌طور خودکار باز نمی‌شود؛ باید فلگ `-gui` را صریحاً پاس بدی:
+   - **ویندوز:** روی فایل `.exe` دوبار کلیک کن — GUI خودکار باز می‌شود
+   - **لینوکس / macOS:** از ترمینال با فلگ `-gui` اجرا کن:
 
 <div dir="ltr" align="left" style="direction: ltr; text-align: left;">
 
 ```bash
+# Linux
+./zyrln-VERSION-linux-amd64 -gui
 # macOS Apple Silicon
 ./zyrln-VERSION-darwin-arm64 -gui
 # macOS Intel
