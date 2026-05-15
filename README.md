@@ -42,8 +42,11 @@ Traffic is routed through Google Apps Script — a free Google service. From the
 
 1. Download the app for your platform from the [Releases](../../releases) page
 2. Run it — the GUI opens in your browser automatically
-   - **macOS:** the GUI does not open automatically; pass the `-gui` flag explicitly:
+   - **Windows:** double-click the `.exe` — the GUI opens automatically
+   - **Linux / macOS:** run from terminal with the `-gui` flag:
      ```bash
+     # Linux
+     ./zyrln-VERSION-linux-amd64 -gui
      # macOS Apple Silicon
      ./zyrln-VERSION-darwin-arm64 -gui
      # macOS Intel
@@ -75,8 +78,11 @@ To access Instagram, Twitter, Telegram, and other non-Google sites, you need to 
 
 1. Download the binary for your OS from [Releases](../../releases)
 2. Run it — the GUI opens automatically in your browser
-   - **macOS:** the GUI does not open automatically; pass the `-gui` flag explicitly:
+   - **Windows:** double-click the `.exe` — the GUI opens automatically
+   - **Linux / macOS:** run from terminal with the `-gui` flag:
      ```bash
+     # Linux
+     ./zyrln-VERSION-linux-amd64 -gui
      # macOS Apple Silicon
      ./zyrln-VERSION-darwin-arm64 -gui
      # macOS Intel
