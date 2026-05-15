@@ -159,10 +159,17 @@ ufw allow 8787/tcp
 <div dir="ltr" align="left" style="direction: ltr; text-align: left;">
 
 ```js
-const AUTH_KEY       = "کلید-مرحله-۱";
-const EXIT_RELAY_URL = "http://آی‌پی-VPS:8787/relay";  // یا آدرس Cloudflare Worker
+const AUTH_KEY       = "your-key-from-step-1";
+const EXIT_RELAY_URL = "http://YOUR_VPS_IP:8787/relay";
 const EXIT_RELAY_KEY = "";
 ```
+
+</div>
+
+<div dir="rtl">
+
+- اگر از **Cloudflare Worker** استفاده می‌کنی: در `EXIT_RELAY_URL` آدرس Worker را بگذار، بدون `/relay` در انتها
+- اگر از VPS استفاده می‌کنی: **EXIT_RELAY_KEY** را با کلیدت پر کن؛ برای Cloudflare خالی بگذار
 
 </div>
 

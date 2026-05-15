@@ -143,9 +143,12 @@ This is the front door. It sits on Google's servers and receives your traffic.
 
 ```js
 const AUTH_KEY       = "your-key-from-step-1";
-const EXIT_RELAY_URL = "http://YOUR_VPS_IP:8787/relay";  // or your Cloudflare Worker URL
+const EXIT_RELAY_URL = "http://YOUR_VPS_IP:8787/relay";
 const EXIT_RELAY_KEY = "";
 ```
+
+- If using **Cloudflare Worker**: paste the Worker URL in `EXIT_RELAY_URL`, no `/relay` at the end
+- If using **VPS**: fill `EXIT_RELAY_KEY` with your relay key; leave empty for Cloudflare
 
 4. Click **Deploy → New deployment**
    - Type: **Web app**
