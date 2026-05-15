@@ -9,12 +9,23 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"zyrln/relay/core"
 
 	"github.com/xjasonlyu/tun2socks/v2/engine"
 )
+
+func init() {
+	// Raise the open-file limit so the proxy can handle many concurrent
+	// connections without hitting the default Android per-process limit.
+	var rl syscall.Rlimit
+	if syscall.Getrlimit(syscall.RLIMIT_NOFILE, &rl) == nil {
+		rl.Cur = rl.Max
+		syscall.Setrlimit(syscall.RLIMIT_NOFILE, &rl)
+	}
+}
 
 const (
 	defaultFrontDomain = "www.google.com"
@@ -340,6 +351,23 @@ func PingDirect() string {
 	}
 	conn.Close()
 	return fmt.Sprintf("%d ms", time.Since(start).Milliseconds())
+}
+
+// SocketProtector is implemented by the Android VpnService to protect sockets
+// from being routed through the VPN tunnel.
+type SocketProtector interface {
+	Protect(fd int64) bool
+}
+
+// SetSocketProtector registers the VPN socket protector so relay HTTP client
+// sockets bypass the TUN and don't loop back through the local MITM proxy.
+// Call this before Start(). Pass nil to clear.
+func SetSocketProtector(p SocketProtector) {
+	if p == nil {
+		core.SetSocketProtectFunc(nil)
+		return
+	}
+	core.SetSocketProtectFunc(func(fd int) { p.Protect(int64(fd)) })
 }
 
 // GenerateCA generates a local CA cert + key at the given paths.

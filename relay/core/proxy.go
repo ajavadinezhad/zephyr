@@ -252,9 +252,21 @@ func handleConnect(w http.ResponseWriter, r *http.Request, coal *Coalescer, ca *
 		return
 	}
 
-	// Google domains: dial directly with TLS fragmentation — no relay, no MITM.
-	if IsDirectDomain(certHost) {
-		handleDirectConnect(rawConn, r.Host)
+	// Google domains: always pipe directly — never MITM (Chrome rejects user CAs).
+	// Use fragmentation when direct mode is on, plain dial otherwise.
+	if IsGoogleDomain(certHost) {
+		if GetDirectEnabled() {
+			handleDirectConnect(rawConn, r.Host)
+		} else {
+			serverConn, err := net.DialTimeout("tcp", r.Host, 15*time.Second)
+			if err != nil {
+				_, _ = rawConn.Write([]byte("HTTP/1.1 502 Bad Gateway\r\n\r\n"))
+				return
+			}
+			defer serverConn.Close()
+			_, _ = rawConn.Write([]byte("HTTP/1.1 200 Connection Established\r\n\r\n"))
+			pipe(rawConn, serverConn)
+		}
 		return
 	}
 
@@ -404,11 +416,22 @@ func (s *SOCKSServer) handleConn(conn net.Conn) {
 			return
 		}
 
-		// Google domains: pipe directly with TLS fragmentation — no relay, no MITM.
-		if IsDirectDomain(certHost) {
-			serverConn, ok := DialFragment(targetHost)
-			if !ok {
-				return
+		// Google domains: always pipe directly — never MITM (Chrome rejects user CAs).
+		// Use fragmentation when direct mode is on, plain dial otherwise.
+		if IsGoogleDomain(certHost) {
+			var serverConn net.Conn
+			if GetDirectEnabled() {
+				var ok bool
+				serverConn, ok = DialFragment(targetHost)
+				if !ok {
+					return
+				}
+			} else {
+				var err error
+				serverConn, err = net.DialTimeout("tcp", targetHost, 15*time.Second)
+				if err != nil {
+					return
+				}
 			}
 			defer serverConn.Close()
 			pipe(&bufferedConn{Conn: conn, reader: reader}, serverConn)

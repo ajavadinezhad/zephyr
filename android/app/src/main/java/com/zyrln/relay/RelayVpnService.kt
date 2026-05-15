@@ -82,6 +82,10 @@ class RelayVpnService : VpnService() {
         val key = intent.getStringExtra(EXTRA_KEY) ?: return START_NOT_STICKY
 
         startForeground(NOTIF_ID, buildNotification())
+        val vpnService = this
+        Mobile.setSocketProtector(object : mobile.SocketProtector {
+            override fun protect(p0: Long): Boolean = vpnService.protect(p0.toInt())
+        })
         startRelay(url, key)
         return START_STICKY
     }
@@ -111,15 +115,10 @@ class RelayVpnService : VpnService() {
             .addAddress("10.99.0.2", 32)
             .setHttpProxy(ProxyInfo.buildDirectProxy("127.0.0.1", PROXY_PORT))
 
-        // TUN routes only needed when relay is active (captures Cronet/app traffic
-        // that ignores system proxy). Direct-only mode relies solely on setHttpProxy.
-        val useTun = url.isNotEmpty()
-        if (useTun) {
-            for (cidr in GOOGLE_CIDRS) {
-                val parts = cidr.split("/")
-                builder.addRoute(parts[0], parts[1].toInt())
-            }
-        }
+        // TUN is not used — setHttpProxy handles all proxy routing.
+        // Chrome and most apps respect setHttpProxy; the VPN tunnel alone is
+        // sufficient to intercept traffic via the system proxy setting.
+        val useTun = false
 
         try {
             vpnInterface = builder.establish()
@@ -149,6 +148,7 @@ class RelayVpnService : VpnService() {
 
     private fun stopRelay() {
         Log.i(TAG, "stopping relay")
+        Mobile.setSocketProtector(null)
         Mobile.stopTun()
         Mobile.stop()
         vpnInterface?.close()

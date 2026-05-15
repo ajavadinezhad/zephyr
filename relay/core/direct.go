@@ -55,12 +55,9 @@ var googleDomains = []string{
 	".withgoogle.com",
 }
 
-// IsDirectDomain reports whether host can skip the relay and be reached via
-// fragmented direct dialing. Returns false when direct mode is disabled.
-func IsDirectDomain(host string) bool {
-	if !GetDirectEnabled() {
-		return false
-	}
+// IsGoogleDomain reports whether host is a Google domain, regardless of
+// whether direct mode is enabled.
+func IsGoogleDomain(host string) bool {
 	h := strings.ToLower(host)
 	if idx := strings.LastIndex(h, ":"); idx != -1 {
 		h = h[:idx]
@@ -71,6 +68,15 @@ func IsDirectDomain(host string) bool {
 		}
 	}
 	return false
+}
+
+// IsDirectDomain reports whether host can skip the relay and be reached via
+// fragmented direct dialing. Returns false when direct mode is disabled.
+func IsDirectDomain(host string) bool {
+	if !GetDirectEnabled() {
+		return false
+	}
+	return IsGoogleDomain(host)
 }
 
 // handleDirectConnect is called by the proxy when the CONNECT target is a

@@ -1,10 +1,10 @@
 package core
 
 import (
-	"context"
-	"crypto/tls"
 	"bytes"
 	"compress/gzip"
+	"context"
+	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -17,10 +17,23 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
+	"syscall"
 	"time"
 )
 
 const maxRelayBody = 16 * 1024 * 1024
+
+// socketProtectFunc, if set, is called with each new TCP socket file descriptor
+// before the connection is established. On Android this should be wired to
+// VpnService.protect() so relay sockets bypass the TUN and don't loop back
+// through the local MITM proxy.
+var socketProtectFunc func(fd int)
+
+// SetSocketProtectFunc registers the per-socket protect callback.
+// Pass nil to clear it. Thread-safe.
+func SetSocketProtectFunc(fn func(fd int)) {
+	socketProtectFunc = fn
+}
 
 // ParseURLList splits a comma-separated URL string and strips all whitespace
 // from each entry, including embedded newlines from copy-paste artifacts.
@@ -75,11 +88,21 @@ type RelayResponse struct {
 
 // NewHTTPClient returns an http.Client configured for relay use.
 func NewHTTPClient(timeout time.Duration) *http.Client {
+	dialer := &net.Dialer{
+		Timeout:   10 * time.Second,
+		KeepAlive: 30 * time.Second,
+		Control: func(network, address string, c syscall.RawConn) error {
+			if fn := socketProtectFunc; fn != nil {
+				return c.Control(func(fd uintptr) { fn(int(fd)) })
+			}
+			return nil
+		},
+	}
 	return &http.Client{
 		Timeout: timeout,
 		Transport: &http.Transport{
 			TLSClientConfig:     &tls.Config{MinVersion: tls.VersionTLS12},
-			DialContext:         (&net.Dialer{Timeout: 10 * time.Second, KeepAlive: 30 * time.Second}).DialContext,
+			DialContext:         dialer.DialContext,
 			MaxIdleConns:        128,
 			MaxIdleConnsPerHost: 32,
 			IdleConnTimeout:     120 * time.Second,
