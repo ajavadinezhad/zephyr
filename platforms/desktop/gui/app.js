@@ -1107,6 +1107,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const el = document.getElementById(id);
             if (el) el.style.display = isDirectMode ? 'none' : '';
         });
+        // In direct-only profile, direct mode is the connection — block clicks without graying out
+        if (directModeToggle) directModeToggle.style.pointerEvents = isDirectMode ? 'none' : '';
         if (runProbesBtn) setButtonDisabled(runProbesBtn, !hasRelay || window.__ZYRLN_STATE__.probesRunning);
         if (exportMobileBtn) setButtonDisabled(exportMobileBtn, !hasRelay || isActivating);
 
@@ -1154,7 +1156,25 @@ document.addEventListener('DOMContentLoaded', () => {
         if (profileSelect.value === '__direct__') {
             setUrlRows('');
             document.getElementById('auth-key').value = '';
+            // switching to direct profile — re-enable direct mode
+            fetch('/api/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ directEnabled: true }),
+            }).then(() => {
+                directModeToggle.classList.add('active');
+                directModeToggle.title = 'Direct mode ON — Google bypasses relay';
+            });
         } else {
+            // switching to relay profile — turn direct mode off by default
+            fetch('/api/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ directEnabled: false }),
+            }).then(() => {
+                directModeToggle.classList.remove('active');
+                directModeToggle.title = 'Direct mode OFF';
+            });
             activateSelectedProfile();
         }
     });
@@ -1164,8 +1184,20 @@ document.addEventListener('DOMContentLoaded', () => {
     showLog(t('log.initial'), 'system');
     loadConfig().then(() => {
         validateInputs();
-        // Activate the auto-selected profile silently so config.env matches what's shown
-        if (profileSelect.value && profileSelect.value !== '__direct__') activateSelectedProfile(true);
+        if (profileSelect.value === '__direct__') {
+            // Ensure direct mode is on when the direct profile is selected at startup
+            fetch('/api/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ directEnabled: true }),
+            }).then(() => {
+                directModeToggle.classList.add('active');
+                directModeToggle.title = 'Direct mode ON — Google bypasses relay';
+            });
+        } else if (profileSelect.value) {
+            // Activate the auto-selected profile silently so config.env matches what's shown
+            activateSelectedProfile(true);
+        }
     });
     async function pollProxyLogs() {
         if (!window.__ZYRLN_STATE__.running) return;

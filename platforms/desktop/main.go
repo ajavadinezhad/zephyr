@@ -29,7 +29,7 @@ import (
 )
 
 const defaultProxyAddress = "direct"
-const appVersion = "1.5.1-pre6"
+const appVersion = "1.5.1-pre7"
 
 //go:embed gui/*
 var embeddedGUI embed.FS
@@ -206,6 +206,7 @@ Flags:
 	if *noDirectFlag {
 		core.SetDirectEnabled(false)
 	}
+	core.SetCacheDir(filepath.Dir(*configFlag))
 
 	if *guiFlag {
 		startGUIServer(*guiListenFlag, *configFlag, *caCertFlag, *caKeyFlag)

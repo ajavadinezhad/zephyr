@@ -154,7 +154,6 @@ func StartProxyWithSOCKSAndCoalescer(httpListenAddr, socksListenAddr string, app
 	return httpSrv, httpLn, socksSrv, socksLn, coal, nil
 }
 
-
 func listenAndServeProxy(listenAddr string, appScriptURLs []string, frontDomain, authKey string, ca *CertAuthority, client *http.Client, timeout time.Duration) (*http.Server, error) {
 	coal, err := newProxyCoalescer(appScriptURLs, frontDomain, authKey, client, timeout)
 	if err != nil {
@@ -677,6 +676,7 @@ func skipRequestHeader(key string) bool {
 // connection open and writing SSE comment keepalives every 20s. No relay call
 // is made, so no Apps Script quota is used. The browser sees a live stream
 // and does not trigger a page refresh when the real SSE endpoint is unreachable.
+
 func serveSSEKeepalive(conn net.Conn) {
 	_, err := fmt.Fprintf(conn, "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nCache-Control: no-cache\r\nConnection: keep-alive\r\n\r\n")
 	if err != nil {
