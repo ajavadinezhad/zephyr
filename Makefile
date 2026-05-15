@@ -3,7 +3,7 @@ ANDROID_HOME ?= $(HOME)/Android/Sdk
 GOTOOLCHAIN  ?= go1.25.0
 GOFLAGS      ?= -buildvcs=false
 AAR_OUT       = android/app/libs/mobile.aar
-APK_VERSION   = 1.5.1-pre7
+APK_VERSION   = 1.5.1-pre8
 APK_RELEASE   = android/app/build/outputs/apk/release/zyrln-$(APK_VERSION).apk
 DESKTOP_VERSION ?= $(APK_VERSION)
 DIST_DIR      = dist

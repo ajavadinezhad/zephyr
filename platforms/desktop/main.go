@@ -29,7 +29,7 @@ import (
 )
 
 const defaultProxyAddress = "direct"
-const appVersion = "1.5.1-pre7"
+const appVersion = "1.5.1-pre8"
 
 //go:embed gui/*
 var embeddedGUI embed.FS
