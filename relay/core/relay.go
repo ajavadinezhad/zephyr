@@ -212,7 +212,6 @@ type Coalescer struct {
 	window        time.Duration
 	maxBatch      int
 	ch            chan *coalescerItem
-	cache         *responseCache
 	stopCh        chan struct{}
 	stopOnce      sync.Once
 }
@@ -260,9 +259,8 @@ func NewCoalescer(client *http.Client, appScriptURLs []string, frontDomain, auth
 		timeout:       timeout,
 		window:        3 * time.Millisecond,
 		maxBatch:      20,
-		ch:            make(chan *coalescerItem, 512),
-		cache:         newResponseCache(),
-		stopCh:        make(chan struct{}),
+		ch:     make(chan *coalescerItem, 512),
+		stopCh: make(chan struct{}),
 	}
 	go c.run()
 	go c.keepaliveLoop()
@@ -306,16 +304,9 @@ func (c *Coalescer) keepaliveLoop() {
 }
 
 // Submit queues a relay request and blocks until the response is ready.
-// GET responses that carry a positive Cache-Control max-age are served from an
-// in-memory cache on subsequent calls, bypassing the relay entirely.
 func (c *Coalescer) Submit(method, targetURL string, headers map[string]string, body []byte) (RelayResponse, error) {
 	if OnRequest != nil {
 		OnRequest(method, targetURL)
-	}
-	if method == "GET" && len(body) == 0 {
-		if e := c.cache.get(targetURL); e != nil {
-			return RelayResponse{Status: e.status, Headers: e.headers, Body: e.body}, nil
-		}
 	}
 
 	item := &coalescerItem{
@@ -338,21 +329,6 @@ func (c *Coalescer) Submit(method, targetURL string, headers map[string]string, 
 	}
 	if r.err != nil {
 		return r.resp, r.err
-	}
-
-	if ttl := cacheableMaxAge(method, headers, r.resp.Headers, r.resp.Status, targetURL); ttl > 0 {
-		bodyCopy := make([]byte, len(r.resp.Body))
-		copy(bodyCopy, r.resp.Body)
-		headersCopy := make(map[string][]string, len(r.resp.Headers))
-		for k, v := range r.resp.Headers {
-			headersCopy[k] = v
-		}
-		c.cache.set(targetURL, &cacheEntry{
-			status:  r.resp.Status,
-			headers: headersCopy,
-			body:    bodyCopy,
-			expiry:  time.Now().Add(ttl),
-		})
 	}
 
 	return r.resp, r.err
