@@ -285,7 +285,7 @@ Flags:
 	}
 
 	if *directProbeFlag {
-		targets := []string{"www.youtube.com"}
+		targets := []string{"www.googleapis.com"}
 		fronts := core.DirectFronts
 		total := len(targets) * len(fronts) * len(core.DirectProfiles()) * *repeatFlag
 		if total < 1 {
