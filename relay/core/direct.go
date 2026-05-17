@@ -55,12 +55,28 @@ var googleDomains = []string{
 	".withgoogle.com",
 }
 
-// IsGoogleDomain reports whether host is a Google domain, regardless of
-// whether direct mode is enabled.
+// sanctionedDomains are Google services geo-blocked for Iranian IPs.
+// These are excluded from direct dialing and always routed through the relay.
+var sanctionedDomains = []string{
+	"gemini.google.com",
+	"bard.google.com",
+	"ai.google",
+	"aistudio.google.com",
+	"labs.google",
+}
+
+// IsGoogleDomain reports whether host is a Google domain eligible for direct
+// fragmented dialing. Returns false for sanctioned domains so they always go
+// through the relay.
 func IsGoogleDomain(host string) bool {
 	h := strings.ToLower(host)
 	if idx := strings.LastIndex(h, ":"); idx != -1 {
 		h = h[:idx]
+	}
+	for _, d := range sanctionedDomains {
+		if h == d || strings.HasSuffix(h, "."+d) {
+			return false
+		}
 	}
 	for _, suffix := range googleDomains {
 		if h == suffix[1:] || strings.HasSuffix(h, suffix) {

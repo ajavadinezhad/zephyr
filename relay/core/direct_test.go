@@ -130,6 +130,65 @@ func TestHandleDirectConnect_PipesData(t *testing.T) {
 	}
 }
 
+// --- IsGoogleDomain ---
+
+func TestIsGoogleDomain(t *testing.T) {
+	tests := []struct {
+		host string
+		want bool
+	}{
+		// plain Google domains
+		{"www.google.com", true},
+		{"MAIL.GOOGLE.COM", true},
+		{"accounts.google.com", true},
+		{"youtube.com", true},
+		{"www.youtube.com", true},
+		{"googleapis.com", true},
+		{"storage.googleapis.com", true},
+		{"gstatic.com", true},
+		{"www.gstatic.com", true},
+		// with port
+		{"www.google.com:443", true},
+		{"youtube.com:80", true},
+		// sanctioned — must go through relay
+		{"gemini.google.com", false},
+		{"gemini.google.com:443", false},
+		{"bard.google.com", false},
+		{"aistudio.google.com", false},
+		{"ai.google", false},
+		{"labs.google", false},
+		// subdomain of sanctioned domain
+		{"sub.gemini.google.com", false},
+		// non-Google
+		{"example.com", false},
+		{"cloudflare.com", false},
+		{"", false},
+	}
+	for _, tc := range tests {
+		if got := IsGoogleDomain(tc.host); got != tc.want {
+			t.Errorf("IsGoogleDomain(%q) = %v, want %v", tc.host, got, tc.want)
+		}
+	}
+}
+
+func TestIsDirectDomain_RespectsToggle(t *testing.T) {
+	orig := GetDirectEnabled()
+	defer SetDirectEnabled(orig)
+
+	SetDirectEnabled(false)
+	if IsDirectDomain("www.google.com") {
+		t.Error("expected false when direct disabled")
+	}
+
+	SetDirectEnabled(true)
+	if !IsDirectDomain("www.google.com") {
+		t.Error("expected true when direct enabled")
+	}
+	if IsDirectDomain("gemini.google.com") {
+		t.Error("sanctioned domain must not be direct even when direct enabled")
+	}
+}
+
 // --- SetDirectEnabled ---
 
 func TestSetDirectEnabled_ConcurrentToggle(t *testing.T) {

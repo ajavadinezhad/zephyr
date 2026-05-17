@@ -163,7 +163,7 @@ func TestHandleHTTP_RelaysRequest(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest("GET", "http://example.com/test", nil)
-	handleHTTP(w, r, fakeCoalescer(t, srv))
+	handleHTTP(w, r, fakeCoalescer(t, srv), nil)
 
 	if w.Code != 200 {
 		t.Errorf("status = %d, want 200", w.Code)
@@ -181,7 +181,7 @@ func TestHandleHTTP_RelayError_Returns502(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest("GET", "http://example.com/test", nil)
-	handleHTTP(w, r, fakeCoalescer(t, srv))
+	handleHTTP(w, r, fakeCoalescer(t, srv), nil)
 
 	if w.Code != http.StatusBadGateway {
 		t.Errorf("status = %d, want 502", w.Code)

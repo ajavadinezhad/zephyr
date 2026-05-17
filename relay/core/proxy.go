@@ -30,7 +30,7 @@ const (
 
 func currentMode(coal *Coalescer, ca *CertAuthority) proxyMode {
 	direct := GetDirectEnabled()
-	relay := coal != nil && ca != nil
+	relay := coal != nil
 	switch {
 	case direct && relay:
 		return modeDirectRelay
@@ -344,6 +344,11 @@ func handleConnect(w http.ResponseWriter, r *http.Request, coal *Coalescer, ca *
 		// non-Google: fall through to MITM+relay
 	case modeRelay:
 		// fall through to MITM+relay
+	}
+
+	if ca == nil {
+		_, _ = rawConn.Write([]byte("HTTP/1.1 502 HTTPS proxy unavailable\r\n\r\n"))
+		return
 	}
 
 	_, _ = rawConn.Write([]byte("HTTP/1.1 200 Connection Established\r\n\r\n"))
