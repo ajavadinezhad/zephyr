@@ -36,11 +36,8 @@ var DirectFronts = []string{
 var googleDomains = []string{
 	".google.com",
 	".googleapis.com",
-	".googlevideo.com",
 	".googleusercontent.com",
 	".gstatic.com",
-	".youtube.com",
-	".ytimg.com",
 	".ggpht.com",
 	".googletagmanager.com",
 	".googletagservices.com",
